@@ -1,0 +1,450 @@
+/* Guardian Angel — main console (dark theme) */
+
+:root {
+  --bg: #0c0f14;
+  --surface: #141a22;
+  --surface-elevated: #1a222d;
+  --border: #2d3a4a;
+  --text: #e8edf4;
+  --text-muted: #8b9bb0;
+  --accent: #6eb5ff;
+  --accent-dim: #3d6a9e;
+  --focus: #f0c14a;
+  --danger: #f85149;
+  --font-sans: "DM Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  --radius: 10px;
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(110, 181, 255, 0.08), transparent),
+    var(--bg);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  z-index: 999;
+  padding: 0.5rem 1rem;
+  background: var(--surface-elevated);
+  color: var(--text);
+}
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+}
+
+.app-header {
+  border-bottom: 1px solid var(--border);
+  background: rgba(20, 26, 34, 0.92);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.app-header__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+}
+
+.app-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.app-subtitle {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.nav-tools {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.875rem;
+}
+
+.nav-tools__label {
+  color: var(--text-muted);
+}
+
+.badge-salt {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  color: var(--accent);
+}
+
+main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.25rem;
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  main {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.panel__header {
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-elevated);
+}
+
+.panel__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.panel__hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.panel__body {
+  padding: 1rem 1.1rem 1.15rem;
+}
+
+.count-hero {
+  text-align: center;
+  padding: 0.5rem 0 0.25rem;
+}
+
+.count-hero__value {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+.count-hero__caption {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.count-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 360px) {
+  .count-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.count-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.count-chip__label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.swatch--red {
+  background: #f85149;
+}
+.swatch--yellow {
+  background: #d4a72c;
+}
+.swatch--green {
+  background: #3fb950;
+}
+.swatch--gray {
+  background: #8b949e;
+}
+.swatch--black {
+  background: #21262d;
+  border-color: #6e7681;
+}
+
+.count-chip__name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.count-chip__meta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  display: block;
+}
+
+.count-chip__num {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+}
+
+.filter-btn {
+  appearance: none;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.filter-btn:hover {
+  border-color: var(--accent-dim);
+  background: rgba(110, 181, 255, 0.08);
+}
+
+.filter-btn[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: rgba(110, 181, 255, 0.18);
+  color: var(--text);
+}
+
+.victim-table-wrap {
+  overflow-x: auto;
+  margin: 0 -1.1rem;
+  padding: 0 1.1rem;
+}
+
+.victim-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.victim-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  padding: 0.5rem 0.65rem;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.victim-table td {
+  padding: 0.65rem 0.65rem;
+  border-bottom: 1px solid rgba(45, 58, 74, 0.6);
+  vertical-align: top;
+}
+
+.victim-table tbody tr:hover td {
+  background: rgba(110, 181, 255, 0.04);
+}
+
+.victim-table tbody tr[hidden] {
+  display: none;
+}
+
+.col-id {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+}
+
+.triage-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid transparent;
+}
+
+.triage-badge__text {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  font-size: 0.72rem;
+  opacity: 0.95;
+}
+
+.triage-badge--red {
+  background: rgba(248, 81, 73, 0.18);
+  border-color: rgba(248, 81, 73, 0.55);
+  color: #ffb4b0;
+}
+.triage-badge--yellow {
+  background: rgba(212, 167, 44, 0.2);
+  border-color: rgba(212, 167, 44, 0.55);
+  color: #f0d27a;
+}
+.triage-badge--green {
+  background: rgba(63, 185, 80, 0.16);
+  border-color: rgba(63, 185, 80, 0.5);
+  color: #9fe8af;
+}
+.triage-badge--gray {
+  background: rgba(139, 148, 158, 0.18);
+  border-color: rgba(139, 148, 158, 0.45);
+  color: #d8dee4;
+}
+.triage-badge--black {
+  background: rgba(33, 38, 45, 0.9);
+  border-color: rgba(110, 118, 129, 0.7);
+  color: #c9d1d9;
+}
+
+.col-desc {
+  max-width: 42ch;
+}
+
+.col-geo {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.col-picture {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent);
+  vertical-align: middle;
+}
+
+.victim-picture-thumb {
+  display: block;
+  width: 120px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #0d1117;
+}
+
+.picture-ref-fallback {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.picture-ref-missing {
+  color: var(--text-muted);
+}
+
+.empty-filter-msg {
+  display: none;
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.empty-filter-msg.is-visible {
+  display: block;
+}
+
+footer.app-footer {
+  max-width: 1280px;
+  margin: 2rem auto 1.5rem;
+  padding: 0 1.25rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-align: center;
+}

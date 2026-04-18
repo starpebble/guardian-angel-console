@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ page_title }} — {{ triage_system }} console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', path='css/console.css') }}" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+
+    <header class="app-header">
+      <div class="app-header__inner">
+        <div>
+          <h1 class="app-title">{{ page_title }}</h1>
+          <p class="app-subtitle">Incident command · Mass-casualty triage feed</p>
+        </div>
+        <nav class="nav-tools" aria-label="Console tools">
+          <a href="/transmissions">Transmissions</a>
+          <a href="/medic-notes">Medic Notes</a>
+          <span class="badge-salt" title="Active triage methodology">{{ triage_system }}</span>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- Pane A: victim counts -->
+      <section class="panel" aria-labelledby="pane-a-title">
+        <div class="panel__header">
+          <h2 id="pane-a-title" class="panel__title">Victim count</h2>
+          <p class="panel__hint">
+            {% if data_source == 'firestore' %}
+            Aggregated from Firestore victim records and stats.
+            {% else %}
+            Demo sample data — configure <code>FIREBASE_PROJECT_ID</code> and credentials for live data.
+            {% endif %}
+          </p>
+        </div>
+        <div class="panel__body">
+          <div class="count-hero">
+            <div class="count-hero__value" id="total-display">{{ total_victims }}</div>
+            <p class="count-hero__caption">Total victims</p>
+          </div>
+          <div class="count-grid" role="list">
+            {% for color in triage_color_order %}
+            <div class="count-chip" role="listitem">
+              <div class="count-chip__label">
+                <span class="swatch swatch--{{ color }}" aria-hidden="true"></span>
+                <span>
+                  <span class="count-chip__name">{{ color | capitalize }}</span>
+                  <span class="count-chip__meta">{{ triage_labels[color] }}</span>
+                </span>
+              </div>
+              <span class="count-chip__num" data-count-for="{{ color }}">{{ counts_by_color[color] }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+
+      <!-- Pane B: victim list + filter -->
+      <section class="panel" aria-labelledby="pane-b-title">
+        <div class="panel__header">
+          <h2 id="pane-b-title" class="panel__title">Victims</h2>
+          <p class="panel__hint">Filter by SALT color. Each row includes a text label (not color alone).</p>
+        </div>
+        <div class="panel__body">
+          <div
+            class="filters"
+            role="group"
+            aria-label="Filter by triage color"
+            id="color-filters"
+          >
+            <button type="button" class="filter-btn" data-filter="all" aria-pressed="true">All</button>
+            {% for color in triage_color_order %}
+            <button type="button" class="filter-btn" data-filter="{{ color }}" aria-pressed="false">
+              {{ triage_labels[color] }}
+            </button>
+            {% endfor %}
+          </div>
+
+          <p id="empty-filter-msg" class="empty-filter-msg" role="status" aria-live="polite" hidden>
+            No victims match this filter.
+          </p>
+
+          <div class="victim-table-wrap">
+            <table class="victim-table" id="victim-table">
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Triage</th>
+                  <th scope="col">Description</th>
+                  <th scope="col">Geo</th>
+                  <th scope="col">Picture</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for v in victims %}
+                <tr data-row-color="{{ v.color }}">
+                  <td class="col-id">{{ v.id }}</td>
+                  <td>
+                    <span class="triage-badge triage-badge--{{ v.color }}">
+                      <span class="swatch swatch--{{ v.color }}" aria-hidden="true"></span>
+                      {{ v.color }}
+                      <span class="triage-badge__text">{{ triage_labels[v.color] }}</span>
+                    </span>
+                  </td>
+                  <td class="col-desc">{{ v.description }}</td>
+                  <td class="col-geo">{% if v.geo %}{{ v.geo }}{% else %}—{% endif %}</td>
+                  <td class="col-picture">
+                    {% if v.picture_data_uri %}
+                    <img
+                      class="victim-picture-thumb"
+                      src="{{ v.picture_data_uri }}"
+                      alt=""
+                      loading="lazy"
+                      width="120"
+                      height="80"
+                    />
+                    {% elif v.picture_text_fallback %}
+                    <span class="picture-ref-fallback" title="Placeholder reference">{{ v.picture_text_fallback }}</span>
+                    {% else %}
+                    <span class="picture-ref-missing">—</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      Guardian Angel · Demo data for layout testing · APIs and live Firebase data to follow
+    </footer>
+
+    <script>
+      (function () {
+        var group = document.getElementById("color-filters");
+        var table = document.getElementById("victim-table");
+        var emptyMsg = document.getElementById("empty-filter-msg");
+        if (!group || !table) return;
+
+        function setActive(btn) {
+          group.querySelectorAll(".filter-btn").forEach(function (b) {
+            b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+          });
+        }
+
+        function apply(filter) {
+          var rows = table.querySelectorAll("tbody tr");
+          var n = 0;
+          rows.forEach(function (row) {
+            var c = row.getAttribute("data-row-color");
+            var show = filter === "all" || c === filter;
+            row.hidden = !show;
+            if (show) n++;
+          });
+          if (emptyMsg) {
+            emptyMsg.hidden = n !== 0;
+            emptyMsg.classList.toggle("is-visible", n === 0);
+          }
+        }
+
+        group.addEventListener("click", function (e) {
+          var btn = e.target.closest(".filter-btn");
+          if (!btn || !group.contains(btn)) return;
+          setActive(btn);
+          apply(btn.getAttribute("data-filter") || "all");
+        });
+
+        apply("all");
+      })();
+    </script>
+  </body>
+</html>

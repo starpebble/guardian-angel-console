@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ page_title }} — Guardian Angel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', path='css/console.css') }}" />
+    <style>
+      .tx-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+      }
+      .payload-pre {
+        margin: 0;
+        max-height: 14rem;
+        overflow: auto;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        white-space: pre-wrap;
+        word-break: break-all;
+        color: var(--text-muted);
+      }
+      .thumb {
+        width: 120px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: #000;
+      }
+      .thumb-missing {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+
+    <header class="app-header">
+      <div class="app-header__inner">
+        <div>
+          <h1 class="app-title">Transmission log</h1>
+          <p class="app-subtitle">Ingestion history · {{ triage_system }}</p>
+        </div>
+        <nav class="nav-tools" aria-label="Console navigation">
+          <a href="/">← Main console</a>
+          <a href="/medic-notes">Medic Notes</a>
+          <span class="badge-salt">{{ triage_system }}</span>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main" style="max-width: 1280px; margin: 0 auto; padding: 1.25rem">
+      <div class="tx-toolbar">
+        <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem">
+          {% if data_source == "firestore" %}
+          Loaded from Firestore (newest first). JSON is the stored payload body.
+          {% else %}
+          Firestore is not configured — no data to show. Set <code>FIREBASE_PROJECT_ID</code> and credentials.
+          {% endif %}
+        </p>
+      </div>
+
+      <div class="panel">
+        <div class="panel__header">
+          <h2 class="panel__title">Transmissions</h2>
+          <p class="panel__hint">Columnar view: metadata, scene photo (if decodable JPEG or PNG hex), full JSON.</p>
+        </div>
+        <div class="panel__body" style="padding: 0">
+          <div class="victim-table-wrap" style="margin: 0">
+            <table class="victim-table">
+              <thead>
+                <tr>
+                  <th scope="col">Received (UTC)</th>
+                  <th scope="col">ID</th>
+                  <th scope="col">System</th>
+                  <th scope="col">Victims</th>
+                  <th scope="col">Geo</th>
+                  <th scope="col">Photo</th>
+                  <th scope="col">Payload JSON</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in rows %}
+                <tr>
+                  <td class="col-geo">
+                    {% if row.received_at %}{{ row.received_at.strftime('%Y-%m-%d %H:%M:%S') }}{% else %}—{% endif %}
+                  </td>
+                  <td class="col-id">{{ row.transmission_id }}</td>
+                  <td>{{ row.triage_system or '—' }}</td>
+                  <td>{{ row.victim_count }}</td>
+                  <td class="col-geo">{{ row.geo or '—' }}</td>
+                  <td>
+                    {% if row.image_data_uri %}
+                    <img class="thumb" src="{{ row.image_data_uri }}" alt="Scene preview" loading="lazy" />
+                    {% else %}
+                    <span class="thumb-missing">No JPEG preview</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <pre class="payload-pre" aria-label="Payload JSON">{{ row.payload_json }}</pre>
+                  </td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem">
+                    No transmissions yet.
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      Guardian Angel · <a href="/docs">OpenAPI</a>
+    </footer>
+  </body>
+</html>

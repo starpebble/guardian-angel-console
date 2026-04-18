@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Medic Notes — Guardian Angel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', path='css/console.css') }}" />
+    <style>
+      .note-text {
+        max-width: 56ch;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+
+    <header class="app-header">
+      <div class="app-header__inner">
+        <div>
+          <h1 class="app-title">Medic Notes</h1>
+          <p class="app-subtitle">AI-transcribed or operator notes · {{ triage_system }}</p>
+        </div>
+        <nav class="nav-tools" aria-label="Console navigation">
+          <a href="/">Main console</a>
+          <a href="/transmissions">Transmissions</a>
+          <span class="badge-salt">{{ triage_system }}</span>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main" style="max-width: 1280px; margin: 0 auto; padding: 1.25rem">
+      <p style="margin: 0 0 1rem; color: var(--text-muted); font-size: 0.9rem">
+        {% if data_source == "firestore" %}
+        Loaded from Firestore collection <code>{{ medic_notes_collection }}</code> (newest first).
+        {% else %}
+        Firestore is not configured — no data to show.
+        {% endif %}
+      </p>
+
+      <div class="panel">
+        <div class="panel__header">
+          <h2 class="panel__title">Notes</h2>
+          <p class="panel__hint">
+            Ingest via <code>POST /api/v1/medicnotes</code> with the same shared secret as triage ingestion.
+          </p>
+        </div>
+        <div class="panel__body" style="padding: 0">
+          <div class="victim-table-wrap" style="margin: 0">
+            <table class="victim-table">
+              <thead>
+                <tr>
+                  <th scope="col">Created (UTC)</th>
+                  <th scope="col">Document ID</th>
+                  <th scope="col">Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in rows %}
+                <tr>
+                  <td class="col-geo">
+                    {% if row.created_at %}{{ row.created_at.strftime('%Y-%m-%d %H:%M:%S') }}{% else %}—{% endif %}
+                  </td>
+                  <td class="col-id">{{ row.id }}</td>
+                  <td class="note-text">{{ row.notes }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 2rem">
+                    No medic notes yet.
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      Guardian Angel · <a href="/docs">OpenAPI</a>
+    </footer>
+  </body>
+</html>

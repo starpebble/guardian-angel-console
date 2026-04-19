@@ -1,10 +1,14 @@
 # Guardian Angel
 
-Local web console for incident command and medic triage workflows. See [`GUARDIAN_ANGEL_SPEC.md`](GUARDIAN_ANGEL_SPEC.md) and [`developer.md`](developer.md).
+Web console for incident command and medic triage workflows. 
 
-Dependencies are managed with **[uv](https://docs.astral.sh/uv/)** (`pyproject.toml` + `uv.lock`).
+## Spec
+
+For spec driven development, please see [`GUARDIAN_ANGEL_SPEC.md`](GUARDIAN_ANGEL_SPEC.md) and [`developer.md`](developer.md).  Built with Cursor and OpenAI Codex.
 
 ## Quick start
+
+Dependencies are managed with **[uv](https://docs.astral.sh/uv/)** (`pyproject.toml` + `uv.lock`).
 
 Install [uv](https://docs.astral.sh/uv/getting-started/installation/) if needed, then from the repository root:
 
@@ -25,3 +29,11 @@ docker run --rm -p 8080:8080 -e PORT=8080 --env-file .env guardian-angel
 ```
 
 Cloud Run and many platforms set **`PORT`**; the image listens on **`PORT`** or **`GUARDIAN_ANGEL_PORT`**, default **8000**. Do not bake secrets into the image — inject **`GUARDIAN_ANGEL_API_SECRET`**, Firebase settings, and credential paths at runtime (see [`developer.md`](developer.md)).
+
+### Repos
+
+Guardian Angel Components:
+
+1. https://github.com/starpebble/guardian-angel-console
+2. https://github.com/starpebble/guardian-angel-radio-app
+3. https://github.com/starpebble/guardian-angel-workflow

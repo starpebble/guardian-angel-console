@@ -1,10 +1,12 @@
 # Guardian Angel — Product & Technical Specification
 
-**Version:** 0.3 (draft for iteration)  
+**Version:** 0.4 (draft for iteration)  
 **Last updated:** 2026-04-18  
-**Stack:** Python web application (HTTP APIs + browser UI), Firebase (data store), Docker (deployment)
+**Stack:** Python **FastAPI** (HTTP APIs + Jinja2 HTML UI), **Uvicorn** (ASGI web server), **Firebase Admin** → **Cloud Firestore** (persistence), **Docker** (deployment)
 
 This document is the single source of truth for **Guardian Angel**, a local-first web console for **incident command** and **military medic / responder** workflows during mass-casualty events. It ingests structured transmissions from an external AI triage application and presents operational situational awareness: aggregate victim counts and per-victim detail with filtering.
+
+**Companion:** For how FastAPI, Uvicorn, Firestore, and Docker connect at runtime, see [`documentation/TECH_STACK.md`](documentation/TECH_STACK.md).
 
 ---
 
@@ -47,9 +49,19 @@ This document is the single source of truth for **Guardian Angel**, a local-firs
             └───────────────┘              └───────────────┘              └───────────────┘
 ```
 
-- **Backend:** Python (recommended: **FastAPI** + **Uvicorn**) — REST API, Pydantic models, server-rendered or static front-end assets.  
-- **Front-end:** Browser UI served by the same process (static files + optional lightweight JS) or a small SPA; spec assumes **one deployment unit** unless split later.  
-- **Firebase:** Persist payloads and normalized victim rows; real-time listeners can drive live UI updates (Firestore recommended for query + listener patterns).
+- **Backend:** **FastAPI** + **Uvicorn** — REST API (`/api/v1/*`), Pydantic models, **Jinja2** server-rendered pages, static assets under `/static`.  
+- **Front-end:** Browser UI served by the **same ASGI process** as the API (spec assumes **one deployment unit** unless split later).  
+- **Firebase:** **Cloud Firestore** via **`firebase-admin`** (Python) — persist payloads and normalized victim rows; optional future: Firestore listeners or WebSockets for sub-second UI (see §13).
+
+### 3.1 Runtime modes (as implemented)
+
+| Mode | When | Operator UI | `POST /api/v1/transmissions` / `POST /api/v1/medicnotes` |
+|------|------|-------------|----------------------------------------------------------|
+| **Connected** | `FIREBASE_PROJECT_ID` set and Firebase Admin / Firestore client initializes | Main `/` reads **`stats/global`** + **`victims`**; `/transmissions` and `/medic-notes` read Firestore | **201** on success |
+| **No database** | `FIREBASE_PROJECT_ID` unset, credentials missing/invalid, or init raises | Main `/` uses **demo** victim data; log pages show **no rows** (`data_source` indicates none) | **503** — cannot persist |
+| **Secret missing** | Ingestion secret env not set | Same as row above for reads | **503** — ingestion disabled (misconfiguration), not **401** |
+
+Firestore client calls run off the asyncio event loop (thread pool) so ingestion stays responsive under bursty writes.
 
 ---
 
@@ -61,8 +73,8 @@ This document is the single source of truth for **Guardian Angel**, a local-firs
 - **Body:** JSON matching an **evolving Pydantic schema** (see §6).  
 - **Behavior:**  
   - Validate payload.  
-  - On success: write to Firebase (raw payload + denormalized victim records for list/count queries).  
-  - Return `202 Accepted` or `201 Created` with a server-generated `transmission_id`.  
+  - On success: write to Firestore (raw payload + denormalized victim records + aggregate stats in a transaction — see §9).  
+  - Return **`201 Created`** with a server-generated `transmission_id`. If Firestore is not available, return **`503 Service Unavailable`** with an explicit error detail.  
 - **Idempotency (optional v1):** consider `Idempotency-Key` header for retries; document when implemented.
 
 - **Medic notes ingestion:** `POST /api/v1/medicnotes` with body `{ "notes": "<string>" }`, same authentication as transmissions — see §4.4.
@@ -89,7 +101,7 @@ A **separate web page** (e.g. route `/transmissions`, linked from the main conso
 | **Ordering** | Default sort: **newest first** (`received_at` descending). |
 | **Theme** | Same **dark theme** and readability expectations as §4.2. |
 
-**Supporting API (recommended):** Expose **`GET /api/v1/transmissions`** with pagination (`limit`, optional `cursor` / `before_id`) so the page can load history without direct browser access to Firebase credentials; alternatively, server-render the table from the same backend query. Document parameters in OpenAPI.
+**Supporting API (recommended):** Expose **`GET /api/v1/transmissions`** with pagination (`limit`, optional `cursor` — document id of the last row from the previous page) so clients can load history without direct browser access to Firebase credentials; the server-rendered **`/transmissions`** page uses the same store with a **fixed recent window** (implementation loads up to **100** rows; use the JSON API for deeper history).
 
 ### 4.4 Medic notes API & console page
 
@@ -112,7 +124,7 @@ A **separate web page** (e.g. route `/transmissions`, linked from the main conso
 ### 4.5 Health & metadata
 
 - `GET /health` — liveness (200 + minimal JSON).  
-- `GET /api/v1/meta` — build version, git sha if available, configured triage system label (e.g. `SALT`).
+- `GET /api/v1/meta` — JSON including: application **version**, **`triage_system`** label (e.g. `SALT`), optional **`git_sha`** (from `GIT_SHA` at build/deploy time), and **`firestore`** (boolean — whether this process successfully initialized a Firestore-backed store).
 
 ---
 
@@ -222,8 +234,8 @@ BoundingBox
 | Aspect | Specification |
 |--------|-----------------|
 | **Env var** | `GUARDIAN_ANGEL_API_SECRET` (or `GUARDIAN_ANGEL_SHARED_SECRET`) |
-| **Client sends** | Header: `Authorization: Bearer <secret>` **or** `X-Guardian-Angel-Token: <secret>` (pick one in implementation; document in OpenAPI). Same secret protects **`POST /api/v1/transmissions`** and **`POST /api/v1/medicnotes`**. |
-| **Server** | Constant-time comparison (`hmac.compare_digest`). Reject with **401** if missing/invalid. |
+| **Client sends** | Header: `Authorization: Bearer <secret>` **or** `X-Guardian-Angel-Token: <secret>` (both supported; see OpenAPI). Same secret protects **`POST /api/v1/transmissions`** and **`POST /api/v1/medicnotes`**. |
+| **Server** | **Constant-time** comparison of credentials (implementation compares **SHA-256 digests** with `hmac.compare_digest` so timing does not leak key length). Reject with **401** if missing/invalid when a secret **is** configured. If **no** secret is configured, ingestion endpoints return **503** (misconfiguration). |
 | **Rotation** | Document process: deploy new secret, update AI app, retire old (optional dual-secret window in future). |
 
 *This is minimal operational security suitable for controlled networks; it is **not** a substitute for TLS in production — always terminate TLS at the load balancer or reverse proxy.*
@@ -238,12 +250,13 @@ All configuration via environment variables. **Development:** use a `.env` file 
 
 | Variable | Purpose |
 |----------|---------|
-| `GUARDIAN_ANGEL_API_SECRET` | Shared secret for API authentication |
+| `GUARDIAN_ANGEL_API_SECRET` | Shared secret for API authentication (alias: `GUARDIAN_ANGEL_SHARED_SECRET` — either may be set) |
 | `FIREBASE_PROJECT_ID` | GCP / Firebase project id |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to service account JSON (local / VM) **or** use workload identity in GKE/Cloud Run |
 | `GUARDIAN_ANGEL_MEDIC_NOTES_COLLECTION` | Optional — Firestore collection id for medic notes (default **`Medic Notes`**) |
 | `GUARDIAN_ANGEL_HOST` | Bind address (default `0.0.0.0` in container) |
-| `GUARDIAN_ANGEL_PORT` | Listen port (default `8000`) |
+| `GUARDIAN_ANGEL_PORT` | Listen port (default `8000`; Docker/Cloud Run often use `PORT`) |
+| `GIT_SHA` | Optional — surfaced in **`GET /api/v1/meta`** for deploy traceability |
 
 ### 8.2 `.env.example` (committed)
 
@@ -276,16 +289,19 @@ GUARDIAN_ANGEL_PORT=8000
 
 **Rules:** Lock down client writes; **only** the Guardian Angel backend uses the service account with write access. Browser reads via Firebase SDK require **security rules** that allow read-only to authenticated operators *or* proxy all reads through the Python server (simpler for v1: **server-side only Firebase access**, UI uses REST **`GET /api/v1/victims`** for the main list, **`GET /api/v1/transmissions`** for the transmissions log, and **`GET /api/v1/medicnotes`** for medic notes — see §4.3–§4.4).
 
+**SDK:** The reference implementation uses **`firebase-admin`** to obtain a **`google.cloud.firestore.Client`** for the configured GCP project (service account JSON or Application Default Credentials).
+
 ---
 
 ## 10. Local development metadata
 
-When code is generated, the repo SHOULD include:
+The repository includes:
 
 | Artifact | Role |
 |----------|------|
-| `pyproject.toml` | Project name `guardian-angel`, Python version pin, dependencies (fastapi, uvicorn, pydantic, google-cloud-firestore or firebase-admin, python-dotenv, httpx for tests) |
-| `README.md` | Quickstart: `uv sync`, copy `.env.example` → `.env`, `uv run uvicorn …` |
+| `pyproject.toml` | Project **`guardian-angel`**, Python **≥ 3.12**, dependencies: **fastapi**, **uvicorn**, **jinja2**, **pydantic**, **pydantic-settings**, **python-dotenv**, **firebase-admin**, **httpx**, **pillow** (hex image preview) |
+| `guardian_angel/` | Installable package: **`main.py`** (app + HTML routes), **`api/routes/v1.py`**, **`services/firestore_store.py`**, **`templates/`**, **`static/`** |
+| `README.md` | Quickstart: `uv sync`, `uv run uvicorn …` |
 | `uv.lock` | Locked dependency versions (generated by **`uv lock`**; commit to git) |
 | **Run command (dev)** | `uv run uvicorn guardian_angel.main:app --reload --host 127.0.0.1 --port 8000` (after **`uv sync`**) |
 
@@ -307,7 +323,7 @@ When code is generated, the repo SHOULD include:
 
 ### 11.2 `Dockerfile` (repository)
 
-The repo root **`Dockerfile`** builds a single image: **`python:3.12-slim-bookworm`**, **`uv sync --frozen`** from **`uv.lock`**, non-root user, **`HEALTHCHECK`** on **`/health`**, and **`CMD`** binding **`0.0.0.0`** using **`PORT`** / **`GUARDIAN_ANGEL_PORT`** (see file comments).
+The repo root **`Dockerfile`** builds a single image: **`python:3.12-slim-bookworm`**, **`uv sync --frozen --no-dev`** from **`uv.lock`**, non-root user **`app`**, **`HEALTHCHECK`** on **`/health`** (port from **`PORT`** / **`GUARDIAN_ANGEL_PORT`** / default **8000**), and **`CMD`** running **Uvicorn** on **`0.0.0.0`** with the same port resolution (see file comments).
 
 ### 11.3 Compose (optional)
 

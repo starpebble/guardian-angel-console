@@ -1,0 +1,14 @@
+---
+description: Keep GUARDIAN_ANGEL_SPEC.md aligned with the product after substantive agent work
+alwaysApply: true
+---
+
+# Specification maintenance (Guardian Angel)
+
+After you finish a **substantive** change to this repository (behavior, HTTP APIs, env vars, Firebase layout, Docker/runtime, data models, or operator-facing UI), **reconcile documentation** before ending the turn:
+
+1. Open **`GUARDIAN_ANGEL_SPEC.md`** and update **Version**, **Last updated** (use the user’s authoritative session date when known), and any sections that no longer match the code or deployment story.
+2. If the change touches how components integrate (Firebase, FastAPI, Uvicorn, Docker, networking), update **`documentation/TECH_STACK.md`** in the same pass when appropriate.
+3. **Skip** spec churn for typo-only edits, comment-only changes, or formatting-only diffs.
+
+Treat the spec as the **contract** for Guardian Angel: if the implementation diverges, either fix the code or update the spec—do not leave both contradictory.

@@ -4,7 +4,7 @@
 
 # Guardian Angel
 
-Console for mascal triage powered by AI.  
+Console and APIs for mascal triage powered by AI.  
 
 For a demo of all Guardian Angel components, including the [AI workflow](https://github.com/starpebble/guardian-angel-workflow) and [voice app](https://github.com/starpebble/guardian-angel-radio-app), please see the demo on YouTube [
 Guardian Angel Demo - DC Nat Sec Hackathon](https://www.youtube.com/watch?v=nPirk4-PwYQ).

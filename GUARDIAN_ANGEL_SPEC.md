@@ -6,7 +6,7 @@
 
 This document is the single source of truth for **Guardian Angel**, a local-first web console for **incident command** and **military medic / responder** workflows during mass-casualty events. It ingests structured transmissions from an external AI triage application and presents operational situational awareness: aggregate victim counts and per-victim detail with filtering.
 
-**Companion:** For how FastAPI, Uvicorn, Firestore, and Docker connect at runtime, see [`documentation/TECH_STACK.md`](documentation/TECH_STACK.md).
+**Companion:** For how FastAPI, Uvicorn, Firestore, and Docker connect at runtime, see [`documentation/TECH_STACK.md`](documentation/Tech_Stack.md).
 
 ---
 

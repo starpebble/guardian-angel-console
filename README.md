@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="documentation/logo.png" alt="Guardian Angel Logo" width="180">
+</p>
+
 # Guardian Angel
 
 Console for mascal triage powered by AI.  
@@ -23,6 +27,10 @@ Guardian Angel Components:
 ## Spec
 
 For spec driven development, please see [`GUARDIAN_ANGEL_SPEC.md`](GUARDIAN_ANGEL_SPEC.md) and [`developer.md`](developer.md).  Built with Cursor and OpenAI Codex.
+
+## Documentation
+
+There is setup and Firebase config guidance in [Documentation](documentation/)
 
 ## Quick start
 

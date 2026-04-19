@@ -12,7 +12,7 @@ Guardian Angel Demo - DC Nat Sec Hackathon](https://www.youtube.com/watch?v=nPir
 ## Description
 
 Guardian Angel is a multi-user system to accelerate mass casualty search and rescue with AI.
-- Guadian Angel Console: A single view into all the knowledge about the scene, updated in real time
+- Guardian Angel Console: A single view into all the knowledge about the scene, updated in real time
 - Workflow: An AI powered workflow that accepts photos from drones or people and generates a report sent to the console for automated aggregation
 - Voice App: A mobile app for a person medic to share verbal information with Guardian Angel
 
